@@ -1,0 +1,40 @@
+# Archivos específicos del usuario
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos de compilación
+/bin
+/obj
+
+.obj/
+# Archivos de configuración de Visual Studio
+.vs/
+
+# Archivos de configuración de lanzamiento
+**/Properties/launchSettings.json
+
+# Archivos de paquetes NuGet
+*.nupkg
+**/packages/*
+
+# Archivos de resultados de pruebas
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Archivos de configuración de Azure
+*.azurePubxml
+PublishScripts/
+
+# Archivos de configuración de VS Code
+.vscode/
+
+# Archivos de caché y temporales
+*.log
+*.tmp
+*.cache
+*.pdb
+*.pidb
+*.svclog
+*.scc
