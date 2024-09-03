@@ -6,10 +6,10 @@ namespace proyectoDivisas.Repositories
 {
     public class AlertaDivisaCollection : IAlertaDivisasCollection
     {
-        internal MongoDBRepository _repository = new MongoDBRepository();
+        private readonly MongoDBRepository _repository;
         private IMongoCollection<Alerta> Collection;
 
-        public AlertaDivisaCollection()
+        public AlertaDivisaCollection(MongoDBRepository repository)
         {
             Collection = _repository.db.GetCollection<Alerta>("Alertas");
         }

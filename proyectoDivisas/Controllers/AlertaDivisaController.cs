@@ -3,6 +3,7 @@ using proyectoDivisas.Models;
 using proyectoDivisas.Repositories;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using WebApiPrototipos.Controllers;
 
 namespace proyectoDivisas.Controllers
 {
@@ -10,12 +11,14 @@ namespace proyectoDivisas.Controllers
     [ApiController]
     public class AlertaDivisaController : Controller
     {
-        private IAlertaDivisasCollection db = new AlertaDivisaCollection();
+        //private IAlertaDivisasCollection db = new AlertaDivisaCollection();
         private readonly ExternalApiDivisas externalApiDivisas;
+        private readonly IAlertaDivisasCollection db;
 
-        public AlertaDivisaController( ExternalApiDivisas externalApiDivisas)
+        public AlertaDivisaController(ExternalApiDivisas externalApiDivisas, IAlertaDivisasCollection db)
         {
             this.externalApiDivisas = externalApiDivisas;
+            this.db = db;
         }
 
         [HttpGet("ReadAll")]
@@ -24,7 +27,7 @@ namespace proyectoDivisas.Controllers
             var alertas = await db.ReadAllAlertas();
             if (alertas.Count == 0)
             {
-                return NotFound(new {succes= false, message = "No existe alertas guardadas" });
+                return NotFound(new { succes = false, message = "No existe alertas guardadas" });
             }
             var tasks = alertas.Select(async alerta =>
             {
@@ -59,14 +62,14 @@ namespace proyectoDivisas.Controllers
             var alerta = await db.ReadAlertaPorId(id);
             if (alerta == null)
             {
-                return NotFound(new { succes = false,  message = "Alerta no encontrada" });
+                return NotFound(new { succes = false, message = "Alerta no encontrada" });
             }
-           
+
             var from = alerta.DivisaBase;
             var to = alerta.DivisaContraparte;
             var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
             var exchangeRates = JsonDocument.Parse(divisa);
-                
+
             if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
                 ratesElement.TryGetProperty(to, out JsonElement rateValue))
             {
@@ -79,7 +82,7 @@ namespace proyectoDivisas.Controllers
         [HttpPost("Create")]
         public async Task<ActionResult> CreateAlerta([FromBody] Alerta alerta)
         {
-            if(alerta is null)
+            if (alerta is null)
             {
                 return BadRequest();
             }
@@ -126,6 +129,87 @@ namespace proyectoDivisas.Controllers
             }
             await db.DeleteAlerta(id);
             return NoContent();
+        }
+
+        [HttpGet("CheckNotification")]
+        public async Task<ActionResult> CheckNotification()
+        {
+            var alertas = await db.ReadAllAlertas();
+            if (alertas.Count != 0)
+            {
+                var tasks = alertas.Select(async alerta =>
+                {
+                    var from = alerta.DivisaBase;
+                    var to = alerta.DivisaContraparte;
+                    var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
+                    var exchangeRates = JsonDocument.Parse(divisa);
+
+                    if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
+                        ratesElement.TryGetProperty(to, out JsonElement rateValue))
+                    {
+                        alerta.ValorActual = (float)rateValue.GetDouble();
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+
+                var tasksValidaLimites = alertas.Select(async alerta =>
+                {
+                    var limiteMinimo = alerta.Minimo;
+                    var limiteMaximo = alerta.Maximo;
+                    var valorActual = alerta.ValorActual;
+                    if (limiteMaximo >= valorActual)
+                    {
+                        alerta.LimiteMaximoAlcanzado = true;
+                        alerta.LimiteMinimoAlcanzado = false;
+                        await db.UpdateAlerta(alerta);
+                        await NotificationController.SendNotificationAsync(alerta);
+                    }
+                    else if (limiteMinimo <= valorActual)
+                    {
+                        alerta.LimiteMinimoAlcanzado = true;
+                        alerta.LimiteMaximoAlcanzado = false;
+                        await db.UpdateAlerta(alerta);
+                        await NotificationController.SendNotificationAsync(alerta);
+                    }
+                });
+
+                await Task.WhenAll(tasksValidaLimites);
+            }
+            return Ok(new { succes = true, message = "Alertas revisadas" });
+        }
+
+        [HttpGet("ManualMinimmoNotification")]
+        public async Task<ActionResult> ManualMinimoNotification()
+        {
+            var alerta = new Alerta();
+            alerta.DivisaBase = "USD";
+            alerta.DivisaContraparte = "MNX";
+            alerta.Minimo = 19.745f;
+            alerta.Maximo = 22.825f;
+            alerta.ValorActual = 18.923f;
+            alerta.LimiteMinimoAlcanzado = true;
+            alerta.LimiteMaximoAlcanzado = false;
+
+            await NotificationController.SendNotificationAsync(alerta);
+            return Ok(new { succes = true, message = "Alertas notificada" });
+        }
+
+
+        [HttpGet("ManualMaximoNotification")]
+        public async Task<ActionResult> ManualMaximoNotification()
+        {
+            var alerta = new Alerta();
+            alerta.DivisaBase = "USD";
+            alerta.DivisaContraparte = "MNX";
+            alerta.Minimo = 19.745f;
+            alerta.Maximo = 22.825f;
+            alerta.ValorActual = 23.923f;
+            alerta.LimiteMinimoAlcanzado = false;
+            alerta.LimiteMaximoAlcanzado = true;
+
+            await NotificationController.SendNotificationAsync(alerta);
+            return Ok(new { succes = true, message = "Alertas notificada" });
         }
     }
 }

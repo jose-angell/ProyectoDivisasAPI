@@ -1,6 +1,14 @@
+using proyectoDivisas.Models;
 using proyectoDivisas.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+// Configurar MongoSettings
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoSettings"));
+
+// Registrar MongoDBRepository como un servicio singleton
+builder.Services.AddSingleton<MongoDBRepository>();
+
+builder.Services.AddScoped<IAlertaDivisasCollection, AlertaDivisaCollection>();
 
 builder.Services.AddHttpClient<ExternalApiDivisas>(client =>
 {

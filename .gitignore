@@ -5,10 +5,9 @@
 *.sln.docstates
 
 # Archivos de compilación
-/bin
-/obj
+proyectoDivisas/bin
+proyectoDivisas/obj
 
-.obj/
 # Archivos de configuración de Visual Studio
 .vs/
 

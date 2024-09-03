@@ -13,13 +13,16 @@ namespace proyectoDivisas.Repositories
     {
         private readonly ILogger<MonitorService> _logger;
         private readonly ExternalApiDivisas externalApiDivisas;
-        private IAlertaDivisasCollection db = new AlertaDivisaCollection();
+        private readonly IAlertaDivisasCollection db;
+
+        //private IAlertaDivisasCollection db = new AlertaDivisaCollection();
         private Timer _timer;
 
-        public MonitorService(ILogger<MonitorService> logger, ExternalApiDivisas externalApiDivisas)
+        public MonitorService(ILogger<MonitorService> logger, ExternalApiDivisas externalApiDivisas, IAlertaDivisasCollection db)
         {
             _logger = logger;
             this.externalApiDivisas = externalApiDivisas;
+            this.db = db;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -61,12 +64,14 @@ namespace proyectoDivisas.Repositories
                     if( limiteMaximo >=  valorActual )
                     {
                         alerta.LimiteMaximoAlcanzado = true;
+                        alerta.LimiteMinimoAlcanzado = false;
                         await db.UpdateAlerta(alerta);
                         await NotificationController.SendNotificationAsync(alerta);
                     }
                     else if ( limiteMinimo <= valorActual)
                     {
                         alerta.LimiteMinimoAlcanzado = true;
+                        alerta.LimiteMaximoAlcanzado = false;
                         await db.UpdateAlerta(alerta);
                         await NotificationController.SendNotificationAsync(alerta);
                     }

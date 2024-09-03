@@ -1,4 +1,6 @@
-﻿using MongoDB.Driver;
+﻿using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using proyectoDivisas.Models;
 
 namespace proyectoDivisas.Repositories
 {
@@ -6,10 +8,13 @@ namespace proyectoDivisas.Repositories
     {
         public MongoClient client; //coneccion entre la app y la db
         public IMongoDatabase db;
-        public MongoDBRepository()
+        public MongoDBRepository(IConfiguration configuration)
         {
-            client = new MongoClient("mongodb://localhost:27017"); //conection string
-            db = client.GetDatabase("Divisas");
+            var mongoSettings = new MongoSettings();
+            configuration.GetSection("MongoSettings").Bind(mongoSettings);
+
+            client = new MongoClient(mongoSettings.ConnectionString);
+            db = client.GetDatabase(mongoSettings.DatabaseName);
         }
     }
 }
