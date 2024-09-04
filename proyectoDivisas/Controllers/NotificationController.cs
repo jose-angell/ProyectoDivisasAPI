@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using proyectoDivisas.Models;
+using proyectoDivisas.Repositories;
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
@@ -11,11 +12,20 @@ namespace WebApiPrototipos.Controllers
     public class NotificationController : ControllerBase
     {
         private static readonly ConcurrentDictionary<string, StreamWriter> _clients = new ConcurrentDictionary<string, StreamWriter>();
+        private readonly ExternalApiDivisas externalApiDivisas;
+        private readonly IAlertaDivisasCollection db;
+
+        public NotificationController(ExternalApiDivisas externalApiDivisas, IAlertaDivisasCollection db)
+        {
+            this.externalApiDivisas = externalApiDivisas;
+            this.db = db;
+        }
 
         [HttpGet("subscribe")]
         public async Task SubScribe(CancellationToken cancellationToken)
         {
             Response.Headers.Append("Content-Type", "text/event-stream");
+            Response.Headers.Append("Access-Control-Allow-Origin", "*");
             var cliendId = Guid.NewGuid().ToString();
             var cliendStream = new StreamWriter(Response.Body, Encoding.UTF8);
             _clients.TryAdd(cliendId, cliendStream);
@@ -50,6 +60,89 @@ namespace WebApiPrototipos.Controllers
                 }
                 catch (Exception) { }
             }
+        }
+
+        [HttpGet("CheckNotification")]
+        public async Task<ActionResult> CheckNotification()
+        {
+            var alertas = await db.ReadAllAlertas();
+            if (alertas.Count != 0)
+            {
+                var tasks = alertas.Select(async alerta =>
+                {
+                    var from = alerta.DivisaBase;
+                    var to = alerta.DivisaContraparte;
+                    var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
+                    var exchangeRates = JsonDocument.Parse(divisa);
+
+                    if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
+                        ratesElement.TryGetProperty(to, out JsonElement rateValue))
+                    {
+                        alerta.ValorActual = (float)rateValue.GetDouble();
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+
+                var tasksValidaLimites = alertas.Select(async alerta =>
+                {
+                    var limiteMinimo = alerta.Minimo;
+                    var limiteMaximo = alerta.Maximo;
+                    var valorActual = alerta.ValorActual;
+                    if (limiteMaximo >= valorActual)
+                    {
+                        alerta.LimiteMaximoAlcanzado = true;
+                        alerta.LimiteMinimoAlcanzado = false;
+                        await db.UpdateAlerta(alerta);
+                        await SendNotificationAsync(alerta);
+                    }
+                    else if (limiteMinimo <= valorActual)
+                    {
+                        alerta.LimiteMinimoAlcanzado = true;
+                        alerta.LimiteMaximoAlcanzado = false;
+                        await db.UpdateAlerta(alerta);
+                        await SendNotificationAsync(alerta);
+                    }
+                });
+
+                await Task.WhenAll(tasksValidaLimites);
+            }
+            return Ok(new { succes = true, message = "Alertas revisadas" });
+        }
+
+        [HttpGet("ManualMinimoNotification")]
+        public async Task<ActionResult> ManualMinimoNotification()
+        {
+            var alerta = new Alerta();
+            alerta.Id = "66d3c3e9024c7eb9e2c8d212";
+            alerta.DivisaBase = "USD";
+            alerta.DivisaContraparte = "MNX";
+            alerta.Minimo = 19.745f;
+            alerta.Maximo = 22.825f;
+            alerta.ValorActual = 18.923f;
+            alerta.LimiteMinimoAlcanzado = true;
+            alerta.LimiteMaximoAlcanzado = false;
+
+            await SendNotificationAsync(alerta);
+            return Ok(new { succes = true, message = "Alertas notificada" });
+        }
+
+
+        [HttpGet("ManualMaximoNotification")]
+        public async Task<ActionResult> ManualMaximoNotification()
+        {
+            var alerta = new Alerta();
+            alerta.Id = "66d3c3e9024c7eb9e2c8d212";
+            alerta.DivisaBase = "USD";
+            alerta.DivisaContraparte = "MNX";
+            alerta.Minimo = 19.745f;
+            alerta.Maximo = 22.825f;
+            alerta.ValorActual = 23.923f;
+            alerta.LimiteMinimoAlcanzado = false;
+            alerta.LimiteMaximoAlcanzado = true;
+
+            await SendNotificationAsync(alerta);
+            return Ok(new { succes = true, message = "Alertas notificada" });
         }
     }
 }

@@ -11,6 +11,7 @@ namespace proyectoDivisas.Repositories
 
         public AlertaDivisaCollection(MongoDBRepository repository)
         {
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             Collection = _repository.db.GetCollection<Alerta>("Alertas");
         }
         public async Task CreateAlerta(Alerta alerta)

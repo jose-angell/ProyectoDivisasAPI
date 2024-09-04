@@ -10,11 +10,22 @@ builder.Services.AddSingleton<MongoDBRepository>();
 
 builder.Services.AddScoped<IAlertaDivisasCollection, AlertaDivisaCollection>();
 
+
 builder.Services.AddHttpClient<ExternalApiDivisas>(client =>
 {
     client.BaseAddress = new Uri("https://api.frankfurter.app");
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+    });
 });
 
 // Add services to the container.
@@ -34,6 +45,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

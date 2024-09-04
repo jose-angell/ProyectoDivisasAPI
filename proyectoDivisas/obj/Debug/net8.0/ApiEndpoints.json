@@ -1,6 +1,36 @@
 [
   {
     "ContainingType": "WebApiPrototipos.Controllers.NotificationController",
+    "Method": "CheckNotification",
+    "RelativePath": "Alerta/notificacion/CheckNotification",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApiPrototipos.Controllers.NotificationController",
+    "Method": "ManualMaximoNotification",
+    "RelativePath": "Alerta/notificacion/ManualMaximoNotification",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApiPrototipos.Controllers.NotificationController",
+    "Method": "ManualMinimoNotification",
+    "RelativePath": "Alerta/notificacion/ManualMinimoNotification",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApiPrototipos.Controllers.NotificationController",
     "Method": "SubScribe",
     "RelativePath": "Alerta/notificacion/subscribe",
     "HttpMethod": "GET",
