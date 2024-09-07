@@ -89,14 +89,14 @@ namespace WebApiPrototipos.Controllers
                     var limiteMinimo = alerta.Minimo;
                     var limiteMaximo = alerta.Maximo;
                     var valorActual = alerta.ValorActual;
-                    if (limiteMaximo >= valorActual)
+                    if (valorActual >= limiteMaximo )
                     {
                         alerta.LimiteMaximoAlcanzado = true;
                         alerta.LimiteMinimoAlcanzado = false;
                         await db.UpdateAlerta(alerta);
                         await SendNotificationAsync(alerta);
                     }
-                    else if (limiteMinimo <= valorActual)
+                    else if (valorActual <= limiteMinimo)
                     {
                         alerta.LimiteMinimoAlcanzado = true;
                         alerta.LimiteMaximoAlcanzado = false;
