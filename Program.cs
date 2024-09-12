@@ -2,6 +2,8 @@ using proyectoDivisas.Models;
 using proyectoDivisas.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+// Añadir configuración de variables de entorno al usar Docker
+builder.Configuration.AddEnvironmentVariables();
 // Configurar MongoSettings
 builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoSettings"));
 
@@ -40,9 +42,10 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();   
 }
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
