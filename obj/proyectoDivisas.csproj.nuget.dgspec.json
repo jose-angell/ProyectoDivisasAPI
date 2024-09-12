@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\NET\\proyectoDivisas\\proyectoDivisas\\proyectoDivisas.csproj": {}
+    "C:\\NET\\proyectoDivisas\\proyectoDivisas.csproj": {}
   },
   "projects": {
-    "C:\\NET\\proyectoDivisas\\proyectoDivisas\\proyectoDivisas.csproj": {
+    "C:\\NET\\proyectoDivisas\\proyectoDivisas.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\NET\\proyectoDivisas\\proyectoDivisas\\proyectoDivisas.csproj",
+        "projectUniqueName": "C:\\NET\\proyectoDivisas\\proyectoDivisas.csproj",
         "projectName": "proyectoDivisas",
-        "projectPath": "C:\\NET\\proyectoDivisas\\proyectoDivisas\\proyectoDivisas.csproj",
+        "projectPath": "C:\\NET\\proyectoDivisas\\proyectoDivisas.csproj",
         "packagesPath": "C:\\Users\\joseg\\.nuget\\packages\\",
-        "outputPath": "C:\\NET\\proyectoDivisas\\proyectoDivisas\\obj\\",
+        "outputPath": "C:\\NET\\proyectoDivisas\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\joseg\\AppData\\Roaming\\NuGet\\NuGet.Config",
