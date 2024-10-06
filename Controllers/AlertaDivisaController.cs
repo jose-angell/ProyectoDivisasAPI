@@ -33,15 +33,9 @@ namespace proyectoDivisas.Controllers
             {
                 var from = alerta.DivisaBase;
                 var to = alerta.DivisaContraparte;
-                var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
-                var exchangeRates = JsonDocument.Parse(divisa);
-                // se valida si el elemento convertido  json tiene el elemento rates y si si se asigna a ratesElement 
-                // usando ratesElement se busca dentro si existe lapropiedad de "to" si existe se asigna a rateValue
-                if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
-                    ratesElement.TryGetProperty(to, out JsonElement rateValue))
-                {
-                    alerta.ValorActual = (float)rateValue.GetDouble();
-                }
+                var divisa = await externalApiDivisas.GetExternalData(from, to);
+                
+                alerta.ValorActual = divisa[to];
             });
 
             await Task.WhenAll(tasks);
@@ -67,15 +61,9 @@ namespace proyectoDivisas.Controllers
 
             var from = alerta.DivisaBase;
             var to = alerta.DivisaContraparte;
-            var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
-            var exchangeRates = JsonDocument.Parse(divisa);
-
-            if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
-                ratesElement.TryGetProperty(to, out JsonElement rateValue))
-            {
-                alerta.ValorActual = (float)rateValue.GetDouble();
-            }
-
+            var divisa = await externalApiDivisas.GetExternalData(from, to);
+            
+            alerta.ValorActual = divisa[to];
             return Ok(new { succes = true, data = alerta });
         }
 

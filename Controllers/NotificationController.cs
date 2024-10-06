@@ -72,14 +72,9 @@ namespace WebApiPrototipos.Controllers
                 {
                     var from = alerta.DivisaBase;
                     var to = alerta.DivisaContraparte;
-                    var divisa = await externalApiDivisas.GetExternalData($"/latest?from={from}&to={to}");
-                    var exchangeRates = JsonDocument.Parse(divisa);
-
-                    if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
-                        ratesElement.TryGetProperty(to, out JsonElement rateValue))
-                    {
-                        alerta.ValorActual = (float)rateValue.GetDouble();
-                    }
+                    var divisa = await externalApiDivisas.GetExternalData(from, to);
+                    
+                    alerta.ValorActual = divisa[to];
                 });
 
                 await Task.WhenAll(tasks);
@@ -89,20 +84,27 @@ namespace WebApiPrototipos.Controllers
                     var limiteMinimo = alerta.Minimo;
                     var limiteMaximo = alerta.Maximo;
                     var valorActual = alerta.ValorActual;
-                    if (valorActual >= limiteMaximo )
+                    if(limiteMaximo != 0 && valorActual != 0)
                     {
-                        alerta.LimiteMaximoAlcanzado = true;
-                        alerta.LimiteMinimoAlcanzado = false;
-                        await db.UpdateAlerta(alerta);
-                        await SendNotificationAsync(alerta);
+                        if (valorActual >= limiteMaximo)
+                        {
+                            alerta.LimiteMaximoAlcanzado = true;
+                            alerta.LimiteMinimoAlcanzado = false;
+                            await db.UpdateAlerta(alerta);
+                            await SendNotificationAsync(alerta);
+                        }
                     }
-                    else if (valorActual <= limiteMinimo)
+                    if(limiteMinimo != 0 && valorActual != 0)
                     {
-                        alerta.LimiteMinimoAlcanzado = true;
-                        alerta.LimiteMaximoAlcanzado = false;
-                        await db.UpdateAlerta(alerta);
-                        await SendNotificationAsync(alerta);
+                        if (valorActual <= limiteMinimo)
+                        {
+                            alerta.LimiteMinimoAlcanzado = true;
+                            alerta.LimiteMaximoAlcanzado = false;
+                            await db.UpdateAlerta(alerta);
+                            await SendNotificationAsync(alerta);
+                        }
                     }
+                    
                 });
 
                 await Task.WhenAll(tasksValidaLimites);

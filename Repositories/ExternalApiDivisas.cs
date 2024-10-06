@@ -1,4 +1,7 @@
-﻿namespace proyectoDivisas.Repositories
+﻿using proyectoDivisas.Models;
+using System.Text.Json;
+
+namespace proyectoDivisas.Repositories
 {
     public class ExternalApiDivisas
     {
@@ -7,11 +10,23 @@
         {
             _httpClient = httpClient;
         }
-        public async Task<string> GetExternalData(string endpint)
+        public async Task<Dictionary<string,float>> GetExternalData(string from, string to)
         {
-            var response = await _httpClient.GetAsync(endpint);
+            var response = await _httpClient.GetAsync($"/latest?from={from}&to={to}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            var divisa = await response.Content.ReadAsStringAsync();
+            var exchangeRates = JsonDocument.Parse(divisa);
+            var result = new Dictionary<string,float>();
+            if (exchangeRates.RootElement.TryGetProperty("rates", out JsonElement ratesElement) &&
+                       ratesElement.TryGetProperty(to, out JsonElement rateValue))
+            {
+                result[to] = (float)rateValue.GetDouble();
+            }
+            else
+            {
+                result[to] = 0f;
+            }
+            return result;
         }
     }
 }
