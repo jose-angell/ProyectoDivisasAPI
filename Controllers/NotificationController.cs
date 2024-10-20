@@ -126,7 +126,7 @@ namespace WebApiPrototipos.Controllers
             alerta.LimiteMaximoAlcanzado = false;
 
             await SendNotificationAsync(alerta);
-            return Ok(new { succes = true, message = "Alertas notificada" });
+            return Ok(new { success = true, message = "Alertas notificada" });
         }
 
 
@@ -144,7 +144,7 @@ namespace WebApiPrototipos.Controllers
             alerta.LimiteMaximoAlcanzado = true;
 
             await SendNotificationAsync(alerta);
-            return Ok(new { succes = true, message = "Alertas notificada" });
+            return Ok(new { success = true, message = "Alertas notificada" });
         }
     }
 }

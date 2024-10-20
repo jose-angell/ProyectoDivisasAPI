@@ -14,17 +14,15 @@ namespace proyectoDivisas.Repositories
     {
         private readonly ILogger<MonitorService> _logger;
         private readonly ExternalApiDivisas externalApiDivisas;
-       // private readonly IAlertaDivisasCollection db;
+       
         private readonly IServiceProvider _serviceProvider;
 
-        //private IAlertaDivisasCollection db = new AlertaDivisaCollection();
         private Timer _timer;
 
         public MonitorService(ILogger<MonitorService> logger, ExternalApiDivisas externalApiDivisas, IServiceProvider serviceProvider)
         {
             _logger = logger;
             this.externalApiDivisas = externalApiDivisas;
-            //this.db = db;
             _serviceProvider = serviceProvider;
         }
 

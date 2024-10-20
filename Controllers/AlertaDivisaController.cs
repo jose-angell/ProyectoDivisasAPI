@@ -27,7 +27,7 @@ namespace proyectoDivisas.Controllers
             var alertas = await db.ReadAllAlertas();
             if (alertas.Count == 0)
             {
-                return NotFound(new { succes = false, message = "No existe alertas guardadas" });
+                return NotFound(new { success = false, message = "No existe alertas guardadas" });
             }
             var tasks = alertas.Select(async alerta =>
             {
@@ -40,7 +40,7 @@ namespace proyectoDivisas.Controllers
 
             await Task.WhenAll(tasks);
 
-            return Ok(new { succes = true, data = alertas });
+            return Ok(new { success = true, data = alertas });
         }
 
         [HttpGet("ReadById/{id}")]
@@ -50,13 +50,13 @@ namespace proyectoDivisas.Controllers
             var esIdValido = Regex.IsMatch(id, @"^[0-9a-fA-F]{24}$");
             if (!esIdValido)
             {
-                return NotFound(new { succes = false, message = "Id invalido" });
+                return NotFound(new { success = false, message = "Id invalido" });
             }
 
             var alerta = await db.ReadAlertaPorId(id);
             if (alerta == null)
             {
-                return NotFound(new { succes = false, message = "Alerta no encontrada" });
+                return NotFound(new { success = false, message = "Alerta no encontrada" });
             }
 
             var from = alerta.DivisaBase;
@@ -64,7 +64,7 @@ namespace proyectoDivisas.Controllers
             var divisa = await externalApiDivisas.GetExternalData(from, to);
             
             alerta.ValorActual = divisa[to];
-            return Ok(new { succes = true, data = alerta });
+            return Ok(new { success = true, data = alerta });
         }
 
         [HttpPost("Create")]
@@ -86,7 +86,7 @@ namespace proyectoDivisas.Controllers
             var esIdValido = Regex.IsMatch(id, @"^[0-9a-fA-F]{24}$");
             if (!esIdValido)
             {
-                return NotFound(new { succes = false, message = "Id invalido" });
+                return NotFound(new { success = false, message = "Id invalido" });
             }
             if (alerta is null)
             {
@@ -96,10 +96,10 @@ namespace proyectoDivisas.Controllers
             var alertaValidacioon = await db.ReadAlertaPorId(id);
             if (alertaValidacioon == null)
             {
-                return NotFound(new { message = "Alerta no encontrada" });
+                return NotFound(new { success = false, message = "Alerta no encontrada" });
             }
             await db.UpdateAlerta(alerta);
-            return Created("Created", true);
+            return NoContent();
         }
 
         [HttpDelete("Delete/{id}")]
@@ -108,12 +108,12 @@ namespace proyectoDivisas.Controllers
             var esIdValido = Regex.IsMatch(id, @"^[0-9a-fA-F]{24}$");
             if (!esIdValido)
             {
-                return NotFound(new { succes = false, message = "Id invalido" });
+                return NotFound(new { success = false, message = "Id invalido" });
             }
             var alertaValidacioon = await db.ReadAlertaPorId(id);
             if (alertaValidacioon == null)
             {
-                return NotFound(new { message = "Alerta no encontrada" });
+                return NotFound(new { success = false, message = "Alerta no encontrada" });
             }
             await db.DeleteAlerta(id);
             return NoContent();
