@@ -1,5 +1,6 @@
 using proyectoDivisas.Models;
 using proyectoDivisas.Repositories;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 // Añadir configuración de variables de entorno al usar Docker
@@ -10,6 +11,9 @@ builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("Mong
 // Registrar MongoDBRepository como un servicio singleton
 builder.Services.AddSingleton<MongoDBRepository>();
 
+// Regristrar MonitoriService como IHostedService
+builder.Services.AddHostedService<MonitorService>();
+
 builder.Services.AddScoped<IAlertaDivisasCollection, AlertaDivisaCollection>();
 
 
@@ -19,6 +23,7 @@ builder.Services.AddHttpClient<ExternalApiDivisas>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+
 
 builder.Services.AddCors(options =>
 {

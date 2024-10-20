@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using WebApiPrototipos.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace proyectoDivisas.Repositories
 {
@@ -13,23 +14,25 @@ namespace proyectoDivisas.Repositories
     {
         private readonly ILogger<MonitorService> _logger;
         private readonly ExternalApiDivisas externalApiDivisas;
-        private readonly IAlertaDivisasCollection db;
+       // private readonly IAlertaDivisasCollection db;
+        private readonly IServiceProvider _serviceProvider;
 
         //private IAlertaDivisasCollection db = new AlertaDivisaCollection();
         private Timer _timer;
 
-        public MonitorService(ILogger<MonitorService> logger, ExternalApiDivisas externalApiDivisas, IAlertaDivisasCollection db)
+        public MonitorService(ILogger<MonitorService> logger, ExternalApiDivisas externalApiDivisas, IServiceProvider serviceProvider)
         {
             _logger = logger;
             this.externalApiDivisas = externalApiDivisas;
-            this.db = db;
+            //this.db = db;
+            _serviceProvider = serviceProvider;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Monitor Service is starting.");
 
-            _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+            _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(60));
 
             return Task.CompletedTask;
         }
@@ -37,53 +40,59 @@ namespace proyectoDivisas.Repositories
         private async void DoWork(object state)
         {
             _logger.LogInformation("Monitor Service is working.");
-            var alertas = await db.ReadAllAlertas();
-            if (alertas.Count != 0)
+            using (var scope = _serviceProvider.CreateScope())
             {
-                var tasks = alertas.Select(async alerta =>
+                
+                var alertaDivisasCollection = scope.ServiceProvider.GetRequiredService<IAlertaDivisasCollection>();
+
+                var alertas = await alertaDivisasCollection.ReadAllAlertas();
+                if (alertas.Count != 0)
                 {
-                    var from = alerta.DivisaBase;
-                    var to = alerta.DivisaContraparte;
-                    var divisa = await externalApiDivisas.GetExternalData(from, to);
-                    
-                    alerta.ValorActual = divisa[to];
-                    
-                });
-
-                await Task.WhenAll(tasks);
-
-                var tasksValidaLimites = alertas.Select(async alerta =>
-                {
-                    var limiteMinimo = alerta.Minimo;
-                    var limiteMaximo = alerta.Maximo;
-                    var valorActual = alerta.ValorActual;
-                    if (limiteMaximo != 0 && valorActual != 0)
+                    var tasks = alertas.Select(async alerta =>
                     {
-                        if (valorActual >= limiteMaximo)
-                        {
-                            alerta.LimiteMaximoAlcanzado = true;
-                            alerta.LimiteMinimoAlcanzado = false;
-                            await db.UpdateAlerta(alerta);
-                            await NotificationController.SendNotificationAsync(alerta);
-                        }
-                    }
-                    if (limiteMinimo != 0 && valorActual != 0)
-                    {
-                        if (valorActual <= limiteMinimo)
-                        {
-                            alerta.LimiteMinimoAlcanzado = true;
-                            alerta.LimiteMaximoAlcanzado = false;
-                            await db.UpdateAlerta(alerta);
-                            await NotificationController.SendNotificationAsync(alerta);
-                        }
-                    }
-                    
-                });
+                        var from = alerta.DivisaBase;
+                        var to = alerta.DivisaContraparte;
+                        var divisa = await externalApiDivisas.GetExternalData(from, to);
 
-                await Task.WhenAll(tasksValidaLimites);
+                        alerta.ValorActual = divisa[to];
+
+                    });
+
+                    await Task.WhenAll(tasks);
+
+                    var tasksValidaLimites = alertas.Select(async alerta =>
+                    {
+                        var limiteMinimo = alerta.Minimo;
+                        var limiteMaximo = alerta.Maximo;
+                        var valorActual = alerta.ValorActual;
+                        if (limiteMaximo != 0 && valorActual != 0)
+                        {
+                            if (valorActual >= limiteMaximo)
+                            {
+                                alerta.LimiteMaximoAlcanzado = true;
+                                alerta.LimiteMinimoAlcanzado = false;
+                                await alertaDivisasCollection.UpdateAlerta(alerta);
+                                await NotificationController.SendNotificationAsync(alerta);
+                            }
+                        }
+                        if (limiteMinimo != 0 && valorActual != 0)
+                        {
+                            if (valorActual <= limiteMinimo)
+                            {
+                                alerta.LimiteMinimoAlcanzado = true;
+                                alerta.LimiteMaximoAlcanzado = false;
+                                await alertaDivisasCollection.UpdateAlerta(alerta);
+                                await NotificationController.SendNotificationAsync(alerta);
+                            }
+                        }
+
+                    });
+
+                    await Task.WhenAll(tasksValidaLimites);
+                }
+
             }
         }
-
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Monitor Service is stopping.");
